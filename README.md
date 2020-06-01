@@ -1,7 +1,7 @@
 
 # Azure Functions custom handler in Java
 
-The samples available in this folder demonstrate how to implement a [custom handler](https://docs.microsoft.com/azure/azure-functions/functions-custom-handlers) in Java.
+The sample in this folder demonstrates how to implement a [custom handler](https://docs.microsoft.com/azure/azure-functions/functions-custom-handlers) in Java. The code is adapted and simplified from a [Microsoft sample](https://github.com/Azure-Samples/functions-custom-handlers), with the addition of a `Dockerfile` (strangely missing in the original sample) and some configuration for building a GraalVM Native Image.
 
 Example functions featured in this repo include:
 
@@ -9,6 +9,25 @@ Example functions featured in this repo include:
 |------|---------|-------|--------|
 | [SimpleHttpTrigger](SimpleHttpTrigger) | HTTP | n/a   | n/a |
 | [AnotherTrigger](SimpleHttpTriggerWithReturn) | HTTP | HTTP |HTTP |
+
+We meaured response times to the app deployed in Azure:
+
+```bash
+time curl -v https://funapp-dsyer.azurewebsites.net/api/AnotherTrigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
+```
+
+Results (response times in milliseconds):
+
+|Platform | Runtime | Cold | Warm |
+|---------|---------|------|------|
+| Azure   | Function + Java | 1423 | 887 |
+| Azure   | Function + Native | 1100 | 717 |
+| Azure   | Java | 2474(*) | 181 |
+| Azure   | Native | 400 | 231 |
+
+(*) I only ever saw this once. It doesn't appear that the app container usually scales down to zero instances, even after a long timeout. I couldn't find any documentation on this.
+
+The app in this repo uses the `Function+` runtime. The "bare" runtime without the Azure Function layer is the sample app from [Spring GraalVM Native](https://github.com/spring-projects-experimental/spring-graalvm-native/tree/master/spring-graalvm-native-samples/function-netty) also running in Azure as a conatiner web app (UI looks very similar). The difference is that with the Azure Function layer there is a .NET Core app that sits in the same container and proxies requests down to the Spring Boot app. I haven't really figured out why that's a good idea yet (maybe something to do with the function triggers?). It's clearly expensive (about 500ms slower than the "bare" Azure container runtime).
 
 ## Configuration
 
