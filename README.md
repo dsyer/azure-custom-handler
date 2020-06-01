@@ -165,7 +165,7 @@ Ensure you have the GraalVM `native-image` command on your path and then build t
 (cd worker && ./mvnw clean install && compile.sh)
 ```
 
-Build a container as before and use thie `host.json`:
+Build a container as before and use this `host.json`:
 
 ```json
 {
@@ -184,4 +184,4 @@ Build a container as before and use thie `host.json`:
 
 ### Run in Azure Function App
 
-The container can be run in Azure by creating a "Function App" and then modifying the container image configuration (e.g. in the UI) to point to the image we just built.
+The container can be run in Azure by creating a ["Function App"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites/kind/functionapp) and then modifying the container image configuration (e.g. in the UI) to point to the image we just built. There doesn't seem to be a way to specify the container image until after the app is deployed - it is created with a default container image to start with. The UI for "Function Apps" looks identical to the ["App Services"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites) UI. That's the one we used to run a Spring Boot container without the "Function App" wrapper.
