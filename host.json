@@ -2,9 +2,7 @@
 	"version": "2.0",
 	"httpWorker": {
 		"description": {
-			"arguments": ["-jar"],
-			"defaultExecutablePath": "/usr/local/openjdk-8/bin/java",
-			"defaultWorkerPath": "worker/target/worker-1.0.jar"
+			"defaultExecutablePath": "worker/target/worker"
 		}
 	},
 	"extensionBundle": {
