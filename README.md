@@ -185,3 +185,17 @@ Build a container as before and use this `host.json`:
 ### Run in Azure Function App
 
 The container can be run in Azure by creating a ["Function App"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites/kind/functionapp) and then modifying the container image configuration (e.g. in the UI) to point to the image we just built. There doesn't seem to be a way to specify the container image until after the app is deployed - it is created with a default container image to start with. The UI for "Function Apps" looks identical to the ["App Services"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites) UI. That's the one we used to run a Spring Boot container without the "Function App" wrapper.
+
+## Wash Up
+
+Whilst the Azure platform documentation is extensive, there are some inconsistencies, or maybe missing pieces. It was hard work getting anything to run at all, nevermind persuading it to run in Azure.
+
+* These [sample apps](https://docs.microsoft.com/azure/azure-functions/functions-custom-handlers) are referred to in the Azure platform docs. They don't use a docker container though, and they don't themselves contain any information about how to deploy the apps to Azure.
+
+* Several references are made to the `func init --docker` option, but it doesn't know about the Java runtime. [Dockerhub](https://hub.docker.com/_/microsoft-azure-functions-base) definitely has references to Java though, and that's kind of how we got the samples in this repo missing. The Java base container has a JDK, and `JAVA_HOME` is set, but `java` is not on the `PATH` (`<shrug/>`) hence the slightly weird `host.json`.
+
+* There is another section with a [Maven archetype](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image?tabs=bash%2Cportal&pivots=programming-language-java) that generates a `Dockerfile`, but it doesn't use the .NET proxy. Maybe that's the difference between a "custom container" and a "custom handler"? Not clear.
+
+* The role of the .NET proxy in the docker base images is unclear, and it seems to be getting in the way more than anything really. The contract between it and the backend app is not explained anywhere, but you can grope your way to something that works by following the example here, which in turn is copied from a Microsoft sample that doesn't explain how to run itself on the platform.
+
+* Is there a scale to zero? Am I being charged for all the resources behind a custom handler, even while it isn't being triggered. Hard to tell. It's certainly quite hard to observe a true cold start - there are some "slower" starts, and some "slow" starts, but none is as slow as starting a Spring Boot app in a constrained environment, so probably the app was already running, and passivated in some way that isn't exaplained. And none is as fast as a locally running JVM even (nevermind the native images). The .NET proxy adds about 500ms of latency to every request, which puts it well behind. Without the poxy the latency is about the same as equivalent features in AWS and GCP (but they also display true "cold starts").
