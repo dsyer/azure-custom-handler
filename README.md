@@ -12,7 +12,7 @@ Example functions featured in this repo include:
 We meaured response times to the app deployed in Azure:
 
 ```bash
-time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
+time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"value":"Foo"}'
 ```
 
 Results (response times in milliseconds):
@@ -77,7 +77,7 @@ The *local.settings-example.json* is provided to show what values the app is exp
 Hit the endpoints at `http://localhost:7071/api/trigger`
 
 ```
-curl -v http://localhost:7071/api/trigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
+curl -v http://localhost:7071/api/trigger -H "Content-Type: application/json" -d '{"value":"Foo"}'
 ```
 
 ### Build a Container
