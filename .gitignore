@@ -3,6 +3,7 @@
 .settings/
 target/
 hs_err_pi*
+.attach_pid*
 
 bin
 obj

@@ -2,7 +2,7 @@
 	"version": "2.0",
 	"httpWorker": {
 		"description": {
-			"defaultExecutablePath": "worker/target/worker"
+			"defaultExecutablePath": "./worker"
 		}
 	},
 	"extensionBundle": {
