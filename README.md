@@ -7,13 +7,12 @@ Example functions featured in this repo include:
 
 | Name | Trigger | Input | Output |
 |------|---------|-------|--------|
-| [SimpleHttpTrigger](SimpleHttpTrigger) | HTTP | n/a   | n/a |
-| [AnotherTrigger](SimpleHttpTriggerWithReturn) | HTTP | HTTP |HTTP |
+| [trigger](trigger) |  HTTP | HTTP |HTTP |
 
 We meaured response times to the app deployed in Azure:
 
 ```bash
-time curl -v https://funapp-dsyer.azurewebsites.net/api/AnotherTrigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
+time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"Value":"Foo"}'
 ```
 
 Results (response times in milliseconds):
@@ -57,7 +56,7 @@ The *local.settings-example.json* is provided to show what values the app is exp
     },
 ```
 
-- Hit the endpoints at `http://localhost:5001/SimpleHttpTrigger`
+- Hit the endpoints at `http://localhost:5001/trigger`
 
 ### Run Locally with Functions
 
@@ -75,7 +74,7 @@ func start
 
 > All being well you should see the Spring ascii logo, where the functions runtime has started the process.
 
-- Hit the endpoints at `http://localhost:7071/api/SimpleHttpTrigger`
+- Hit the endpoints at `http://localhost:7071/api/trigger`
 
 ### Build a Container
 
@@ -125,8 +124,7 @@ info: Host.Startup[0]
       
 info: Microsoft.Azure.WebJobs.Script.WebHost.WebScriptHostHttpRoutesManager[0]
       Initializing function HTTP routes
-      Mapped function route 'api/AnotherTrigger' [get,post] to 'AnotherTrigger'
-      Mapped function route 'api/SimpleHttpTrigger' [get,post] to 'SimpleHttpTrigger'
+      Mapped function route 'api/trigger' [get,post] to 'trigger'
 ...
 Hosting environment: Production
 Content root path: /
@@ -172,7 +170,7 @@ Build a container as before and use this `host.json`:
 	"version": "2.0",
 	"httpWorker": {
 		"description": {
-			"defaultExecutablePath": "worker/target/worker"
+			"defaultExecutablePath": "./worker"
 		}
 	},
 	"extensionBundle": {
@@ -182,9 +180,17 @@ Build a container as before and use this `host.json`:
 }
 ```
 
-### Run in Azure Function App
+Be sure to set `WEBSITE_RUN_FROM_PACKAGE=1` in the function app settings so that it doesn't squash the executable bit when it deploys. Deploy like this (once the native image is built):
 
-The container can be run in Azure by creating a ["Function App"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites/kind/functionapp) and then modifying the container image configuration (e.g. in the UI) to point to the image we just built. There doesn't seem to be a way to specify the container image until after the app is deployed - it is created with a default container image to start with. The UI for "Function Apps" looks identical to the ["App Services"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites) UI. That's the one we used to run a Spring Boot container without the "Function App" wrapper.
+```
+./mvnw package -P native && \
+(cd target/azure-functions/funappnative; func azure functionapp publish funappnative --java --force)
+```
+
+
+### Run Custom Container in Azure Function App
+
+The container can be run in Azure by creating a ["Function App"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites/kind/functionapp) and then modifying the container image configuration (e.g. in the UI) to point to the image built above. There doesn't seem to be a way to specify the container image until after the app is deployed - it is created with a default container image to start with. The UI for "Function Apps" looks identical to the ["App Services"](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites) UI. That's the one we used to run a Spring Boot container without the "Function App" wrapper.
 
 ## Wash Up
 
@@ -199,3 +205,7 @@ Whilst the Azure platform documentation is extensive, there are some inconsisten
 * The role of the .NET proxy in the docker base images is unclear, and it seems to be getting in the way more than anything really. The contract between it and the backend app is not explained anywhere, but you can grope your way to something that works by following the example here, which in turn is copied from a Microsoft sample that doesn't explain how to run itself on the platform.
 
 * Is there a scale to zero? Am I being charged for all the resources behind a custom handler, even while it isn't being triggered. Hard to tell. It's certainly quite hard to observe a true cold start - there are some "slower" starts, and some "slow" starts, but none is as slow as starting a Spring Boot app in a constrained environment, so probably the app was already running, and passivated in some way that isn't exaplained. And none is as fast as a locally running JVM even (nevermind the native images). The .NET proxy adds about 500ms of latency to every request, which puts it well behind. Without the poxy the latency is about the same as equivalent features in AWS and GCP (but they also display true "cold starts").
+
+* The Maven plugin seems to destroy the app when it deploys a native image. Probably it resets the executable bit in the zip file it uploads or something. To work around that we had to use the `func` CLI directly.
+
+* Running a custom handler with the default Function Host from Azure seems to be no better than creating a custom container, so I expect it's the same code path (the .NET proxy adds a lot of latency).
