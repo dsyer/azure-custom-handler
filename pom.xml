@@ -43,9 +43,9 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-			<plugin>
-				<groupId>com.microsoft.azure</groupId>
-				<artifactId>azure-functions-maven-plugin</artifactId>
+            <plugin>
+                <groupId>com.microsoft.azure</groupId>
+                <artifactId>azure-functions-maven-plugin</artifactId>
                 <version>${azure.functions.maven.plugin.version}</version>
                 <configuration>
                     <appName>${functionAppName}</appName>
@@ -56,14 +56,14 @@
                     <region>Central US</region>
                     <!-- refers https://github.com/microsoft/azure-maven-plugins/wiki/Azure-Functions:-Configuration-Details#supported-pricing-tiers for all valid values -->
                     <pricingTier>EP1</pricingTier>
-					<appSettings>
-						<property>
-							<name>FUNCTIONS_EXTENSION_VERSION</name>
-							<value>~3</value>
-						</property>
-					</appSettings>
-				</configuration>
-			</plugin>
+                    <appSettings>
+                        <property>
+                            <name>FUNCTIONS_EXTENSION_VERSION</name>
+                            <value>~3</value>
+                        </property>
+                    </appSettings>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -73,33 +73,26 @@
             <build>
                 <plugins>
                     <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
+                        <artifactId>maven-antrun-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-resources</id>
+                                <id>${functionAppName}</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>copy-resources</goal>
+                                    <goal>run</goal>
                                 </goals>
+                                <inherited>false</inherited>
                                 <configuration>
-                                    <overwrite>true</overwrite>
-                                    <outputDirectory>${project.build.directory}/azure-functions/${functionAppName}</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}</directory>
-                                            <includes>
-                                                <include>trigger/**</include>
-                                                <include>host.json</include>
-                                                <include>local.settings.json</include>
-                                            </includes>
-                                        </resource>
-                                        <resource>
-                                            <directory>${project.build.directory}</directory>
-                                            <includes>
-                                                <include>worker</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
+                                    <target>
+                                        <copy todir="${project.build.directory}/azure-functions/${functionAppName}">
+                                            <fileset dir="src/main/azure">
+                                                <include name="**/*"></include>
+                                            </fileset>
+                                        </copy>
+                                        <exec executable="cp">
+l                                            <arg line="${project.build.directory}/${project.artifactId} ${project.build.directory}/azure-functions/${functionAppName}"/>
+                                        </exec>
+                                    </target>
                                 </configuration>
                             </execution>
                         </executions>
