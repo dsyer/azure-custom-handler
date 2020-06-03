@@ -11,9 +11,9 @@ public class JavaAPI {
   public InvokeResponse AnotherTriggerHandler(@RequestBody InvokeRequest request){
     System.out.println("Java queue trigger handler: " + request.Data);
     InvokeResponse resp = new InvokeResponse();
-    resp.Logs.add("Java: test log1");
-    resp.Logs.add("Java: test log2");
     String value = request.Data.containsKey("Value") ? (String) request.Data.get("Value") : "World";
+    resp.Logs.add("Java: test log1: " + request.Data);
+    resp.Logs.add("Java: test log2: " + request.Metadata);
     resp.ReturnValue = "Hello " + value;
     return resp;
   }

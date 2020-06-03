@@ -1,0 +1,14 @@
+{
+	"version": "2.0",
+	"httpWorker": {
+		"description": {
+			"arguments": ["-agentlib:jdwp=transport=dt_socket,server=y,address=5005,suspend=n", "-jar"],
+			"defaultExecutablePath": "java",
+			"defaultWorkerPath": "worker-1.0.jar"
+		}
+	},
+	"extensionBundle": {
+        "id": "Microsoft.Azure.Functions.ExtensionBundle",
+        "version": "[1.*, 2.0.0)"
+    }
+}

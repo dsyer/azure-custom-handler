@@ -85,13 +85,51 @@
                                 <configuration>
                                     <target>
                                         <copy todir="${project.build.directory}/azure-functions/${functionAppName}">
-                                            <fileset dir="src/main/azure">
+                                            <fileset dir="src/main/azure/functions">
+                                                <include name="**/*"></include>
+                                            </fileset>
+                                            <fileset dir="src/main/azure/native">
                                                 <include name="**/*"></include>
                                             </fileset>
                                         </copy>
                                         <exec executable="cp">
 l                                            <arg line="${project.build.directory}/${project.artifactId} ${project.build.directory}/azure-functions/${functionAppName}"/>
                                         </exec>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>java</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>${functionAppName}</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <inherited>false</inherited>
+                                <configuration>
+                                    <target>
+                                        <copy todir="${project.build.directory}/azure-functions/${functionAppName}">
+                                            <fileset dir="src/main/azure/functions">
+                                                <include name="**/*"></include>
+                                            </fileset>
+                                            <fileset dir="src/main/azure/java">
+                                                <include name="**/*"></include>
+                                            </fileset>
+                                            <fileset dir="${project.build.directory}">
+                                                <include name="${project.artifactId}-${project.version}.jar"></include>
+                                            </fileset>
+                                        </copy>
                                     </target>
                                 </configuration>
                             </execution>

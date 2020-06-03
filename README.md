@@ -12,7 +12,7 @@ Example functions featured in this repo include:
 We meaured response times to the app deployed in Azure:
 
 ```bash
-time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"Value":"Foo"}'
+time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
 ```
 
 Results (response times in milliseconds):
@@ -63,18 +63,22 @@ The *local.settings-example.json* is provided to show what values the app is exp
 - Package the Java api into a jar file:
 
 ```bash
-(cd worker; mvn package)
+(cd worker; mvn package -P java)
 ```
 
 - In a terminal run:
 
 ```bash
-func start
+(cd target/azure-functions/funappnative; func start)
 ```
 
 > All being well you should see the Spring ascii logo, where the functions runtime has started the process.
 
-- Hit the endpoints at `http://localhost:7071/api/trigger`
+Hit the endpoints at `http://localhost:7071/api/trigger`
+
+```
+curl -v http://localhost:7071/api/trigger -H "Content-Type: application/json" -d '{"Data":{"Value":"Foo"}}'
+```
 
 ### Build a Container
 
@@ -87,7 +91,7 @@ To run the app in a JVM use this `host.json`:
 		"description": {
 			"arguments": ["-jar"],
 			"defaultExecutablePath": "/usr/local/openjdk-8/bin/java",
-			"defaultWorkerPath": "worker/target/worker-1.0.jar"
+			"defaultWorkerPath": "worker-1.0.jar"
 		}
 	},
 	"extensionBundle": {
@@ -209,3 +213,5 @@ Whilst the Azure platform documentation is extensive, there are some inconsisten
 * The Maven plugin seems to destroy the app when it deploys a native image. Probably it resets the executable bit in the zip file it uploads or something. To work around that we had to use the `func` CLI directly.
 
 * Running a custom handler with the default Function Host from Azure seems to be no better than creating a custom container, so I expect it's the same code path (the .NET proxy adds a lot of latency).
+
+* Getting a error response from a function you just deployed is very common at first, and there is almost no way to know what went wrong. No logs anywhere.
