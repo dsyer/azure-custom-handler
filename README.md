@@ -9,7 +9,7 @@ Example functions featured in this repo include:
 |------|---------|-------|--------|
 | [trigger](trigger) |  HTTP | HTTP |HTTP |
 
-We meaured response times to the app deployed in Azure:
+We measured response times to the app deployed in Azure:
 
 ```bash
 time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type: application/json" -d '{"value":"Foo"}'
@@ -17,16 +17,22 @@ time curl -v https://funapp-dsyer.azurewebsites.net/api/trigger -H "Content-Type
 
 Results (response times in milliseconds):
 
-|Platform | Runtime | Cold | Warm |
-|---------|---------|------|------|
-| Azure   | Function + Java | 1423 | 887 |
-| Azure   | Function + Native | 1100 | 717 |
-| Azure   | Java | 2474(*) | 181 |
-| Azure   | Native | 400 | 231 |
+|Platform | Runtime | Service Plan | Location | Cold | Warm |
+|---------|---------|--------------|----------|------|------|
+| Azure   | Function + Java | Elastic Premium EP1 | US Central(+) | 1423 | 887 |
+| Azure   | Function + Native | Elastic Premium EP1 | US Central| 1100   | 717 |
+| Azure   | Function + Java | Elastic Premium EP1 | West Europe | 823    | 212 |
+| Azure   | Function + Native | Elastic Premium EP1 | West Europe | 512  | 205 |
+| Azure   | Function + Java | Direct Y1           | West Europe | 7170   | 243 |
+| Azure   | Function + Native | Direct Y1         | West Europe | 12494  | 219 |
+| Azure   | Java | Premium V2 P1v2     | West Europe            | 599(*) | 213 |
+| Azure   | Native | Premium V2 P1v2   | West Europe            | 463    | 173 |
 
-(*) I only ever saw this once. It doesn't appear that the app container usually scales down to zero instances, even after a long timeout. I couldn't find any documentation on this.
+(+) Note that the "US Central" deployments were quite a bit slower from the point of view of the user - an additional 500ms or so. I was testing from London, so there was a hop across the Atlantic, but most likely something else going on that contributes to the extra latency.
 
-The app in this repo uses the `Function+` runtime. The "bare" runtime without the Azure Function layer is the sample app from [Spring GraalVM Native](https://github.com/spring-projects-experimental/spring-graalvm-native/tree/master/spring-graalvm-native-samples/function-netty) also running in Azure as a conatiner web app (UI looks very similar). The difference is that with the Azure Function layer there is a .NET Core app that sits in the same container and proxies requests down to the Spring Boot app. I haven't really figured out why that's a good idea yet (maybe something to do with the function triggers?). It's clearly expensive (about 500ms slower than the "bare" Azure container runtime).
+(*) Very occasionally, this would be longer. The app container does not scale down to zero instances, even after a long timeout. I couldn't find any documentation on this, but people at Microsoft assure me this is what I am paying for with the "Elastic Premium" tier.
+
+The app in this repo uses the `Function+` runtime. The "bare" runtime without the Azure Function layer is the sample app from [Spring GraalVM Native](https://github.com/spring-projects-experimental/spring-graalvm-native/tree/master/spring-graalvm-native-samples/function-netty) also running in Azure as a container web app (UI looks very similar). The difference is that with the Azure Function layer there is a .NET Core app that sits in the same container and proxies requests down to the Spring Boot app. I haven't really figured out why that's a good idea yet (maybe something to do with the function triggers?), but it doesn't seem to slow things down much.
 
 ## Configuration
 
@@ -208,10 +214,10 @@ Whilst the Azure platform documentation is extensive, there are some inconsisten
 
 * The role of the .NET proxy in the docker base images is unclear, and it seems to be getting in the way more than anything really. The contract between it and the backend app is not explained anywhere, but you can grope your way to something that works by following the example here, which in turn is copied from a Microsoft sample that doesn't explain how to run itself on the platform.
 
-* Is there a scale to zero? Am I being charged for all the resources behind a custom handler, even while it isn't being triggered. Hard to tell. It's certainly quite hard to observe a true cold start - there are some "slower" starts, and some "slow" starts, but none is as slow as starting a Spring Boot app in a constrained environment, so probably the app was already running, and passivated in some way that isn't explained. And none is as fast as a locally running JVM even (nevermind the native images). The .NET proxy adds about 500ms of latency to every request, which puts it well behind. Without the poxy the latency is about the same as equivalent features in AWS and GCP (but they also display true "cold starts").
+* Scale to zero does not happen in the "Premium" tiers. Also in the "Free" tier the container seems to stay warm, so it was quite hard to observe a true cold start - there are some "slower" starts, and some "slow" starts, but none is as slow as starting a Spring Boot app in a constrained environment, so probably the app was already running, and passivated in some way that isn't explained. And none is as fast as a locally running JVM even (nevermind the native images). The warm latency is about the same as equivalent features in AWS and GCP (but they also display true "cold starts").
 
 * The Maven plugin seems to destroy the app when it deploys a native image. Probably it resets the executable bit in the zip file it uploads or something. To work around that we had to use the `func` CLI directly.
 
-* Running a custom handler with the default Function Host from Azure seems to be no better than creating a custom container, so I expect it's the same code path (the .NET proxy adds a lot of latency).
+* Running a custom handler with the default Function Host from Azure seems to be no better than creating a custom container, so I expect it's the same code path.
 
 * Getting a error response from a function you just deployed is very common at first, and there is almost no way to know what went wrong. No logs anywhere.
