@@ -30,18 +30,20 @@ Results (response times in milliseconds):
 
 (+) Note that the "US Central" deployments were quite a bit slower from the point of view of the user - an additional 500ms or so. I was testing from London, so there was a hop across the Atlantic, but most likely something else going on that contributes to the extra latency.
 
-(*) Very occasionally, this would be longer. The app container does not scale down to zero instances, even after a long timeout. I couldn't find any documentation on this, but people at Microsoft assure me this is what I am paying for with the "Elastic Premium" tier.
+(*) Very occasionally, this would be longer. The app container does not scale down to zero instances, even after a long timeout. I couldn't find any documentation on this, but people at Microsoft assure me this is what I am paying for with the "Premium" tier.
 
-The app in this repo uses the `Function+` runtime. The "bare" runtime without the Azure Function layer is the sample app from [Spring GraalVM Native](https://github.com/spring-projects-experimental/spring-graalvm-native/tree/master/spring-graalvm-native-samples/function-netty) also running in Azure as a container web app (UI looks very similar). The difference is that with the Azure Function layer there is a .NET Core app that sits in the same container and proxies requests down to the Spring Boot app. I haven't really figured out why that's a good idea yet (maybe something to do with the function triggers?), but it doesn't seem to slow things down much.
+The app in this repo uses the `Function+` runtime. The "bare" runtime without the Azure Function layer is the sample app from [Spring GraalVM Native](https://github.com/spring-projects-experimental/spring-native/tree/master/samples/function-netty) also running in Azure as a container web app (UI looks very similar). The difference is that with the Azure Function layer there is a .NET Core app that sits in the same container and proxies requests down to the Spring Boot app. I haven't really figured out why that's a good idea yet (maybe something to do with the function triggers?), but it doesn't seem to slow things down much.
 
 ## Configuration
 
-The *local.settings-example.json* is provided to show what values the app is expecting to read from environment variables. Make a copy of *local.settings-example.json* and rename it *local.settings.json* and replace any values that begin with "**YOUR_**" with your values.
+The `src/azure/local.settings-example.json` is provided to show what values the app is expecting to read from environment variables. Make a copy of `local.settings-example.json` and rename it `local.settings.json` and replace any values that begin with "**YOUR_**"values. In the [Azure Portal](https://portal.azure.com/) under `Security + networking`, select `Access keys`. Your account access keys appear, as well as the complete connection string for each key.
 
 ## Pre-reqs
 
-- Java 8
-- Maven (for packaging)
+- GraalVM 21.3 (Java 11)
+- Azure CLI (provided by `shell.nix`)
+- Remote authentication (run `az login` on the command line)
+- A storage connection URL in `local.settings.json` (see above)
 
 ## Build and Run
 
@@ -69,16 +71,16 @@ The *local.settings-example.json* is provided to show what values the app is exp
 - Package the Java api into a jar file:
 
 ```bash
-(cd worker; mvn package -P java)
+./mvnw package -P java
 ```
 
-- In a terminal run:
+- Run the function:
 
 ```bash
-(cd target/azure-functions/funappnative; func start)
+(cd target/azure-functions/*; func start)
 ```
 
-> All being well you should see the Spring ascii logo, where the functions runtime has started the process.
+All being well you should see the Spring ascii logo, where the functions runtime has started the process.
 
 Hit the endpoints at `http://localhost:7071/api/trigger`
 
@@ -96,7 +98,7 @@ To run the app in a JVM use this `host.json`:
 	"httpWorker": {
 		"description": {
 			"arguments": ["-jar"],
-			"defaultExecutablePath": "/usr/local/openjdk-8/bin/java",
+			"defaultExecutablePath": "java",
 			"defaultWorkerPath": "worker-1.0.jar"
 		}
 	},
@@ -110,7 +112,7 @@ To run the app in a JVM use this `host.json`:
 and build an image:
 
 ```bash
-(cd worker; ./mvnw clean install) && docker build -t dsyer/simple-function .
+./mvnw clean install -P java && docker build -t dsyer/simple-function -f Dockerfile.java .
 ```
 
 Run it locally:
@@ -170,7 +172,7 @@ info: Host.Function.Console[0]
 Ensure you have the GraalVM `native-image` command on your path and then build the image:
 
 ```bash
-(cd worker && ./mvnw clean install && compile.sh)
+./mvnw clean install -P native
 ```
 
 Build a container as before and use this `host.json`:
@@ -194,7 +196,7 @@ Be sure to set `WEBSITE_RUN_FROM_PACKAGE=1` in the function app settings so that
 
 ```
 ./mvnw package -P native && \
-(cd target/azure-functions/funappnative; func azure functionapp publish funappnative --java --force)
+(cd target/azure-functions/*; func azure functionapp publish funappnative --java --force)
 ```
 
 
@@ -208,7 +210,7 @@ Whilst the Azure platform documentation is extensive, there are some inconsisten
 
 * These [sample apps](https://docs.microsoft.com/azure/azure-functions/functions-custom-handlers) are referred to in the Azure platform docs. They don't use a docker container though, and they don't themselves contain any information about how to deploy the apps to Azure.
 
-* Several references are made to the `func init --docker` option, but it doesn't know about the Java runtime. [Dockerhub](https://hub.docker.com/_/microsoft-azure-functions-base) definitely has references to Java though, and that's kind of how we got the samples in this repo missing. The Java base container has a JDK, and `JAVA_HOME` is set, but `java` is not on the `PATH` (`<shrug/>`) hence the slightly weird `host.json`.
+* Several references are made to the `func init --docker` option, but it doesn't know about the Java runtime. [Dockerhub](https://hub.docker.com/_/microsoft-azure-functions-base) definitely has references to Java though, and that's kind of how we got the samples in this repo missing. The Java base container has a JDK, and `JAVA_HOME` is set, but `java` is not on the `PATH` (`<shrug/>`) hence the slightly weird `Dockerfile.java`.
 
 * There is another section with a [Maven archetype](https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image?tabs=bash%2Cportal&pivots=programming-language-java) that generates a `Dockerfile`, but it doesn't use the .NET proxy. Maybe that's the difference between a "custom container" and a "custom handler"? Not clear.
 

@@ -3,7 +3,7 @@
 	"httpWorker": {
 		"description": {
 			"arguments": ["-jar"],
-			"defaultExecutablePath": "/usr/lib/jvm/zre-8-azure-amd64/bin/java",
+			"defaultExecutablePath": "java",
 			"defaultWorkerPath": "worker-1.0.jar"
 		}
 	},

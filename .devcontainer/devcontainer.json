@@ -1,6 +1,13 @@
 {
 	"name": "Java",
 	"dockerFile": "Dockerfile",
+    "build": {
+        "args": {
+            "USER": "${env:USER}",
+            "USER_ID": 1000, // VSCode adjusts the IDs when it builds
+            "USER_GID": 1000
+        }
+    },
 	"runArgs": [
 		"-u", "${env:USER}",
 
@@ -8,6 +15,8 @@
 
 		"--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined",
 
+		"--mount", "type=bind,source=${env:HOME}/.config,target=${env:HOME}/.config",
+		"--mount", "type=bind,source=${env:HOME}/.vscode,target=${env:HOME}/.vscode",
 		"--mount", "type=bind,source=${env:HOME}/.ssh,target=${env:HOME}/.ssh",
 		"--mount", "type=bind,source=${env:HOME}/.m2,target=${env:HOME}/.m2"
 	],

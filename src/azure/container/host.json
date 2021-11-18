@@ -3,7 +3,7 @@
 	"httpWorker": {
 		"description": {
 			"arguments": ["-jar"],
-			"defaultExecutablePath": "/usr/local/openjdk-8/bin/java",
+			"defaultExecutablePath": "java",
 			"defaultWorkerPath": "worker-1.0.jar"
 		}
 	},
